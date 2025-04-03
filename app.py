@@ -1,11 +1,11 @@
+import os
 import requests
 from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
-# Replace with your Google Safe Browsing API Key
-API_KEY = "AIzaSyAesETOJZQ37BICMo9h-EZ1XYTfMqgj5Vk"
-API_URL = f"https://safebrowsing.googleapis.com/v4/threatMatches:find?key={AIzaSyAesETOJZQ37BICMo9h-EZ1XYTf>
+API_KEY = os.getenv("AIzaSyAesETOJZQ37BICMo9h-EZ1XYTfMqgj5Vk")  # Get API key from environment variable
+API_URL = f"https://safebrowsing.googleapis.com/v4/threatMatches:find?key={API_KEY}"
 
 def check_url_with_api(url):
     payload = {
