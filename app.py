@@ -6,17 +6,17 @@ app = Flask(__name__)
 
 # GitHub-hosted Phishing URL List
 GITHUB_URL = "https://raw.githubusercontent.com/daytraderbtcc/Phishing-URL-Blacklist-/main/phishing_urls.txt"
-url_data = requests.get(GITHUB_URL).text
 
-# Normalize URLs (strip spaces, remove "http://", "https://", trailing "/")
-url_list = set(u.strip().lower().replace("http://", "").replace("https://", "").rstrip("/") for u in url_data.split("\n") if u.strip())
+try:
+    # Fetch phishing URLs (keeping full format, including "https://")
+    url_list = {url.strip() for url in requests.get(GITHUB_URL).text.split("\n") if url.strip()}
+except Exception as e:
+    print(f"Error loading phishing URLs: {e}")
+    url_list = set()  # Use an empty set in case of failure
 
 def check_phishing(url):
-    """Check if the given URL is in the phishing list."""
-    # Normalize input URL
-    normalized_url = url.strip().lower().replace("http://", "").replace("https://", "").rstrip("/")
-
-    if normalized_url in url_list:
+    """Check if the given full URL is in the phishing list."""
+    if url in url_list:
         return Markup('<div class="alert alert-danger">⚠️ <b>Warning!</b> This website is flagged as <b>phishing</b>.</div>')
     else:
         return Markup('<div class="alert alert-success">✅ <b>Safe!</b> No phishing threats detected.</div>')
@@ -25,8 +25,8 @@ def check_phishing(url):
 def home():
     result = ""
     if request.method == "POST":
-        url = request.form["url"]
-        if url.strip() == "":
+        url = request.form["url"].strip()
+        if not url:
             result = Markup('<div class="alert alert-warning">⚠️ Please enter a valid URL!</div>')
         else:
             result = check_phishing(url)
