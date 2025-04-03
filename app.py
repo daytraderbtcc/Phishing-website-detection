@@ -1,46 +1,25 @@
-import requests
-from flask import Flask, render_template, request, jsonify
-from markupsafe import Markup
+import requests from flask import Flask, render_template, request from markupsafe import Markup
 
-app = Flask(__name__)
+app = Flask(name)
 
-# GitHub-hosted Phishing URL List
-GITHUB_URL = "https://raw.githubusercontent.com/daytraderbtcc/Phishing-URL-Blacklist-/main/phishing_urls.txt"
+GitHub-hosted Phishing URL List
 
-try:
-    url_list = requests.get(GITHUB_URL).text.split("\n")
-except Exception as e:
-    print("Error fetching phishing URL list:", str(e))
-    url_list = []  # Fallback in case of error
+GITHUB_URL = "https://raw.githubusercontent.com/daytraderbtcc/Phishing-URL-Blacklist-/main/phishing_urls.txt" url_list = requests.get(GITHUB_URL).text.split("\n")
 
-def check_phishing(url):
-    """Check if the given URL is in the phishing list."""
-    if url in url_list:
-        return Markup('<div class="alert alert-danger">⚠️ <b>Warning!</b> This website is flagged as <b>phishing</b>.</div>')
-    else:
-        return Markup('<div class="alert alert-success">✅ <b>Safe!</b> No phishing threats detected.</div>')
+def check_phishing(url): """Check if the given URL is in the phishing list (ignoring formatting issues)."""
 
-@app.route("/", methods=["GET"])
-def home():
-    return render_template("index.html")
+# Normalize the input URL (remove scheme, trim spaces, convert to lowercase)
+url = url.strip().lower().replace("http://", "").replace("https://", "").rstrip("/")
 
-@app.route("/check-url", methods=["POST"])
-def check_url():
-    try:
-        data = request.get_json()
-        if not data or "url" not in data:
-            return jsonify({"result": '<div class="alert alert-warning">⚠️ Invalid request!</div>'}), 400
+# Normalize phishing list URLs
+normalized_list = [u.strip().lower().replace("http://", "").replace("https://", "").rstrip("/") for u in url_list]
 
-        url = data["url"].strip()
-        if not url:
-            return jsonify({"result": '<div class="alert alert-warning">⚠️ Please enter a valid URL!</div>'}), 400
+if url in normalized_list:
+    return Markup('<div class="alert alert-danger">⚠️ <b>Warning!</b> This website is flagged as <b>phishing</b>.</div>')
+else:
+    return Markup('<div class="alert alert-success">✅ <b>Safe!</b> No phishing threats detected.</div>')
 
-        result = check_phishing(url)
-        return jsonify({"result": str(result)})
+@app.route("/", methods=["GET", "POST"]) def home(): result = "" if request.method == "POST": url = request.form["url"] if url.strip() == "": result = Markup('<div class="alert alert-warning">⚠️ Please enter a valid URL!</div>') else: result = check_phishing(url) return render_template("index.html", result=result)
 
-    except Exception as e:
-        print("Error processing request:", str(e))
-        return jsonify({"result": '<div class="alert alert-danger">❌ Server error occurred!</div>'}), 500
+if name == "main": app.run(debug=True)
 
-if __name__ == "__main__":
-    app.run(debug=True)
